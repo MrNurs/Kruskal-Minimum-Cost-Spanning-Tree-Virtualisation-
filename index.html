@@ -1,203 +1,274 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kruskal MST Visualization</title>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <title>Kruskal's Algorithm</title>
   <style>
-    svg {
-      width: 100%;
-      height: 500px;
-      border: 1px solid black;
-    }
-    line {
-      stroke: gray;
-      stroke-width: 2;
-    }
-    .mst {
-      stroke: green;
-      stroke-width: 4;
-    }
-    .current {
-      stroke: red;
-      stroke-width: 4;
-    }
-    circle {
-      fill: steelblue;
-    }
-    text {
-      font-size: 14px;
-      text-anchor: middle;
-    }
     table {
       border-collapse: collapse;
-      margin-top: 10px;
+      margin: 10px;
     }
-    td, th {
-      border: 1px solid black;
-      padding: 5px;
-      text-align: center;
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    canvas {
+      border: 1px solid #aaa;
+    }
+    .controls {
+      margin: 10px 0;
+    }
+    input[type="number"] {
+      width: 50px;
+      margin-right: 10px;
     }
   </style>
 </head>
 <body>
-<h2>Алгоритм Крускала (MST) - Визуализация</h2>
-<button onclick="generateGraph()">Создать новый граф</button>
-<button onclick="startKruskalStepByStep()">Поиск MST (пошагово)</button>
-<svg></svg>
-<h3>Disjoint Set</h3>
-<table id="disjointSet"></table>
-<h3>Edges</h3>
-<table id="edgesTable"></table>
+  <h2>Kruskal's Algorithm (MST)</h2>
+  <div class="controls">
+    <label>
+      Number of Vertices: 
+      <input type="number" id="vertexCount" value="6" min="2" max="12">
+    </label>
+    <button onclick="generateGraph()">Generate Graph</button>
+    <button onclick="startKruskalStepByStep()">Find MST Step-by-Step</button>
+  </div>
+
+  <div style="display: flex; gap: 20px;">
+    <div>
+      <h3>Graph Visualization</h3>
+      <canvas id="graphCanvas" width="600" height="500"></canvas>
+    </div>
+    
+    <div>
+      <h3>Graph Edges</h3>
+      <table id="edgesTable"></table>
+      
+      <h3>Minimum Spanning Tree</h3>
+      <table id="mstTable"></table>
+      
+      <h3>Disjoint Set Union Status</h3>
+      <table id="disjointSet"></table>
+    </div>
+  </div>
+
 <script>
-  class MinHeap {
-    constructor() {
-      this.heap = [];
-    }
-    insert(edge) {
-      this.heap.push(edge);
-      this.heap.sort((a, b) => a.weight - b.weight);
-    }
-    extractMin() {
-      return this.heap.shift();
-    }
-    isEmpty() {
-      return this.heap.length === 0;
-    }
+let vertices = [];
+let edges = [];
+let mstEdges = [];
+let parent = {};
+let rank = {};
+let stepTimeout;
+let currentStepEdges = [];
+
+function generateGraph() {
+  clearTimeout(stepTimeout);
+  const vertexCount = parseInt(document.getElementById('vertexCount').value) || 6;
+  vertices = [];
+  edges = [];
+  mstEdges = [];
+
+  // Generate vertices in circular layout
+  const centerX = 300;
+  const centerY = 250;
+  const radius = Math.min(200, 400 / (vertexCount * 0.5));
+  const angleStep = (2 * Math.PI) / vertexCount;
+
+  for (let i = 0; i < vertexCount; i++) {
+    const angle = (i * angleStep) - Math.PI/2;
+    vertices.push({
+      id: i,
+      x: centerX + radius * Math.cos(angle),
+      y: centerY + radius * Math.sin(angle)
+    });
   }
 
-  let nodes = [];
-  let edges = [];
-  let mstEdges = [];
-  let parent = {}, rank = {};
-  let edgeQueue = new MinHeap();
-  const svg = d3.select("svg");
-
-  function generateGraph() {
-    nodes = Array.from({ length: 6 }, (_, id) => ({
-      id,
-      x: Math.random() * 500 + 50,
-      y: Math.random() * 400 + 50
-    }));
-    edges = [];
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        if (Math.random() > 0.5) {
-          edges.push({ source: i, target: j, weight: Math.floor(Math.random() * 10) + 1 });
-        }
-      }
-    }
-    drawGraph();
-    updateEdgesTable();
+  // Generate edges
+  const connected = new Set([0]);
+  
+  // Create connected graph
+  while (connected.size < vertexCount) {
+    const from = [...connected][Math.floor(Math.random() * connected.size)];
+    const to = Array.from({length: vertexCount}, (_, i) => i)
+                  .find(i => !connected.has(i));
+    if (to === undefined) break;
+    
+    edges.push({
+      source: from,
+      target: to,
+      weight: Math.floor(Math.random() * 9) + 1
+    });
+    connected.add(to);
   }
 
-  function drawGraph() {
-    svg.selectAll("*").remove();
-    svg.selectAll("line")
-      .data(edges)
-      .enter()
-      .append("line")
-      .attr("x1", d => nodes[d.source].x)
-      .attr("y1", d => nodes[d.source].y)
-      .attr("x2", d => nodes[d.target].x)
-      .attr("y2", d => nodes[d.target].y)
-      .attr("class", "edge");
-
-    svg.selectAll("circle")
-      .data(nodes)
-      .enter()
-      .append("circle")
-      .attr("cx", d => d.x)
-      .attr("cy", d => d.y)
-      .attr("r", 10);
-
-    svg.selectAll("text")
-      .data(nodes)
-      .enter()
-      .append("text")
-      .attr("x", d => d.x)
-      .attr("y", d => d.y - 15)
-      .text(d => d.id);
-  }
-
-  function updateEdgesTable() {
-    let table = document.getElementById("edgesTable");
-    table.innerHTML = "<tr><th>Источник</th><th>Цель</th><th>Вес</th></tr>" +
-      edges.map(edge => `<tr><td>${edge.source}</td><td>${edge.target}</td><td>${edge.weight}</td></tr>`).join('');
-  }
-
-  function updateDisjointSetTable() {
-    let table = document.getElementById("disjointSet");
-    table.innerHTML = "<tr><th>Узел</th><th>Родитель</th></tr>" +
-      Object.keys(parent).map(node => `<tr><td>${node}</td><td>${parent[node]}</td></tr>`).join('');
-  }
-
-  function find(i) {
-    if (parent[i] === i) return i;
-    return parent[i] = find(parent[i]);
-  }
-
-  function union(x, y) {
-    let rootX = find(x);
-    let rootY = find(y);
-    if (rootX !== rootY) {
-      if (rank[rootX] < rank[rootY]) {
-        parent[rootX] = rootY;
-      } else if (rank[rootX] > rank[rootY]) {
-        parent[rootY] = rootX;
-      } else {
-        parent[rootY] = rootX;
-        rank[rootX]++;
+  // Add random edges
+  for (let i = 0; i < vertexCount; i++) {
+    for (let j = i + 1; j < vertexCount; j++) {
+      if (Math.random() > 0.5 && !edges.some(e => 
+        (e.source === i && e.target === j) ||
+        (e.source === j && e.target === i)
+      )) {
+        edges.push({
+          source: i,
+          target: j,
+          weight: Math.floor(Math.random() * 9) + 1
+        });
       }
     }
   }
 
-  function startKruskalStepByStep() {
-    edgeQueue = new MinHeap();
-    edges.forEach(edge => edgeQueue.insert(edge));
-    mstEdges = [];
-    parent = {}; rank = {};
-    nodes.forEach(node => { parent[node.id] = node.id; rank[node.id] = 0; });
-    updateDisjointSetTable();
-    stepKruskal();
+  updateVisualization();
+}
+
+function find(node) {
+  if (parent[node] !== node) {
+    parent[node] = find(parent[node]);
   }
+  return parent[node];
+}
 
-  function stepKruskal() {
-    if (edgeQueue.isEmpty()) return;
-    let edge = edgeQueue.extractMin();
-    let root1 = find(edge.source);
-    let root2 = find(edge.target);
+function union(node1, node2) {
+  const root1 = find(node1);
+  const root2 = find(node2);
 
-    svg.selectAll(".current").remove();
-    svg.append("line")
-      .attr("x1", nodes[edge.source].x)
-      .attr("y1", nodes[edge.source].y)
-      .attr("x2", nodes[edge.target].x)
-      .attr("y2", nodes[edge.target].y)
-      .attr("class", "current");
-
-    if (root1 !== root2) {
-      mstEdges.push(edge);
-      union(root1, root2);
-      drawMST();
-      updateDisjointSetTable();
+  if (root1 !== root2) {
+    if (rank[root1] > rank[root2]) {
+      parent[root2] = root1;
+    } else {
+      parent[root1] = root2;
+      if (rank[root1] === rank[root2]) {
+        rank[root2]++;
+      }
     }
-    setTimeout(stepKruskal, 1500);
+  }
+}
+
+function startKruskalStepByStep() {
+  clearTimeout(stepTimeout);
+  mstEdges = [];
+  parent = {};
+  rank = {};
+  
+  currentStepEdges = [...edges].sort((a, b) => a.weight - b.weight);
+  
+  vertices.forEach(v => {
+    parent[v.id] = v.id;
+    rank[v.id] = 0;
+  });
+  
+  updateVisualization();
+  stepKruskal();
+}
+
+function stepKruskal() {
+  if (currentStepEdges.length === 0) return;
+
+  const edge = currentStepEdges.shift();
+  const root1 = find(edge.source);
+  const root2 = find(edge.target);
+
+  if (root1 !== root2) {
+    mstEdges.push(edge);
+    union(edge.source, edge.target);
   }
 
-  function drawMST() {
-    svg.selectAll(".mst").remove();
-    svg.selectAll(".mst")
-      .data(mstEdges)
-      .enter()
-      .append("line")
-      .attr("x1", d => nodes[d.source].x)
-      .attr("y1", d => nodes[d.source].y)
-      .attr("x2", d => nodes[d.target].x)
-      .attr("y2", d => nodes[d.target].y)
-      .attr("class", "mst");
+  updateVisualization();
+
+  if (currentStepEdges.length > 0) {
+    stepTimeout = setTimeout(stepKruskal, 1500);
   }
+}
+
+function updateVisualization() {
+  // Update tables
+  updateTable('edgesTable', edges);
+  updateTable('mstTable', mstEdges);
+  updateDSUTable();
+
+  // Draw graph
+  const canvas = document.getElementById('graphCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw edges
+  edges.forEach(edge => {
+    const v1 = vertices[edge.source];
+    const v2 = vertices[edge.target];
+    const isMST = mstEdges.some(e => 
+      (e.source === edge.source && e.target === edge.target) ||
+      (e.source === edge.target && e.target === edge.source)
+    );
+
+    ctx.beginPath();
+    ctx.moveTo(v1.x, v1.y);
+    ctx.lineTo(v2.x, v2.y);
+    ctx.strokeStyle = isMST ? '#e74c3c' : '#bdc3c7';
+    ctx.lineWidth = isMST ? 3 : 1;
+    ctx.stroke();
+
+    // Edge weight label
+    ctx.fillStyle = '#2c3e50';
+    ctx.font = '12px Arial';
+    const midX = (v1.x + v2.x)/2 + 5;
+    const midY = (v1.y + v2.y)/2 + 5;
+    ctx.fillText(edge.weight, midX, midY);
+  });
+
+  // Draw vertices
+  vertices.forEach(v => {
+    ctx.beginPath();
+    ctx.arc(v.x, v.y, 15, 0, Math.PI * 2);
+    ctx.fillStyle = '#3498db';
+    ctx.fill();
+    ctx.strokeStyle = '#2c3e50';
+    ctx.stroke();
+    
+    ctx.fillStyle = '#ecf0f1';
+    ctx.font = '14px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(v.id, v.x, v.y);
+  });
+}
+
+function updateTable(tableId, items) {
+  const table = document.getElementById(tableId);
+  table.innerHTML = `
+    <tr>
+      <th>Source</th>
+      <th>Target</th>
+      <th>Weight</th>
+    </tr>
+    ${items.map(edge => `
+      <tr>
+        <td>${edge.source}</td>
+        <td>${edge.target}</td>
+        <td>${edge.weight}</td>
+      </tr>
+    `).join('')}
+  `;
+}
+
+function updateDSUTable() {
+  const table = document.getElementById('disjointSet');
+  table.innerHTML = `
+    <tr>
+      <th>Vertex</th>
+      <th>Parent</th>
+    </tr>
+    ${vertices.map(v => `
+      <tr>
+        <td>${v.id}</td>
+        <td>${parent[v.id]}</td>
+      </tr>
+    `).join('')}
+  `;
+}
+
+// Initialize on load
+generateGraph();
 </script>
 </body>
 </html>
