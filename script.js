@@ -1,86 +1,107 @@
-const nodes = [
-    { id: 0, x: 50, y: 50 },
-    { id: 1, x: 300, y: 100 },
-    { id: 2, x: 50, y: 250 },
-    { id: 3, x: 250, y: 400 },
-    { id: 4, x: 450, y: 200 }
-];
-const edges = [
-    { u: 0, v: 1, weight: 3 },
-    { u: 0, v: 2, weight: 1 },
-    { u: 1, v: 2, weight: 3 },
-    { u: 1, v: 4, weight: 6 },
-    { u: 2, v: 3, weight: 4 },
-    { u: 3, v: 4, weight: 2 }
-];
+let nodes = [];
+let edges = [];
+let mstEdges = [];
+let stepIndex = 0;
+const svg = d3.select("svg");
 
-const graphDiv = document.getElementById('graph');
-edges.forEach(({ u, v, weight }, index) => {
-    const nodeU = nodes[u];
-    const nodeV = nodes[v];
-
-    const edge = document.createElement('div');
-    edge.classList.add('edge');
-    edge.style.width = Math.hypot(nodeV.x - nodeU.x, nodeV.y - nodeU.y) + 'px';
-    edge.style.top = nodeU.y + 15 + 'px';
-    edge.style.left = nodeU.x + 15 + 'px';
-    edge.style.transform = `rotate(${Math.atan2(nodeV.y - nodeU.y, nodeV.x - nodeU.x)}rad)`;
-    edge.setAttribute('data-edge-id', index);
-    graphDiv.appendChild(edge);
-});
-class DSU {
-    constructor(n) {
-        this.parent = Array.from({ length: n }, (_, i) => i);
-        this.rank = Array(n).fill(1);
-    }
-
-    find(v) {
-        if (this.parent[v] !== v) {
-            this.parent[v] = this.find(this.parent[v]);
-        }
-        return this.parent[v];
-    }
-
-    union(a, b) {
-        let rootA = this.find(a);
-        let rootB = this.find(b);
-        if (rootA !== rootB) {
-            if (this.rank[rootA] > this.rank[rootB]) {
-                this.parent[rootB] = rootA;
-            } else if (this.rank[rootA] < this.rank[rootB]) {
-                this.parent[rootA] = rootB;
-            } else {
-                this.parent[rootB] = rootA;
-                this.rank[rootA]++;
+function generateGraph() {
+    nodes = Array.from({ length: 6 }, (_, id) => ({
+        id,
+        x: Math.random() * 500 + 50,
+        y: Math.random() * 400 + 50
+    }));
+    edges = [];
+    for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+            if (Math.random() > 0.5) {
+                edges.push({ source: i, target: j, weight: Math.floor(Math.random() * 10) + 1 });
             }
-            return true;
         }
-        return false;
+    }
+    drawGraph();
+}
+
+function drawGraph() {
+    svg.selectAll("*").remove();
+    svg.selectAll("line")
+        .data(edges)
+        .enter()
+        .append("line")
+        .attr("x1", d => nodes[d.source].x)
+        .attr("y1", d => nodes[d.source].y)
+        .attr("x2", d => nodes[d.target].x)
+        .attr("y2", d => nodes[d.target].y)
+        .attr("class", "edge");
+
+    svg.selectAll("circle")
+        .data(nodes)
+        .enter()
+        .append("circle")
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y)
+        .attr("r", 10);
+
+    svg.selectAll("text")
+        .data(nodes)
+        .enter()
+        .append("text")
+        .attr("x", d => d.x)
+        .attr("y", d => d.y - 15)
+        .text(d => d.id);
+}
+
+function find(parent, i) {
+    if (parent[i] === i) return i;
+    return find(parent, parent[i]);
+}
+
+function union(parent, rank, x, y) {
+    let rootX = find(parent, x);
+    let rootY = find(parent, y);
+    if (rootX !== rootY) {
+        if (rank[rootX] < rank[rootY]) {
+            parent[rootX] = rootY;
+        } else if (rank[rootX] > rank[rootY]) {
+            parent[rootY] = rootX;
+        } else {
+            parent[rootY] = rootX;
+            rank[rootX]++;
+        }
     }
 }
-function runKruskal() {
-    edges.sort((a, b) => a.weight - b.weight); 
-    const dsu = new DSU(nodes.length);
-    const mstEdges = [];
 
-    for (let { u, v, weight } of edges) {
-        if (dsu.union(u, v)) {
-            mstEdges.push({ u, v });
-            if (mstEdges.length === nodes.length - 1) break;
-        }
-    }
-
-    highlightEdges(mstEdges);
+function startKruskalStepByStep() {
+    edges.sort((a, b) => a.weight - b.weight);
+    mstEdges = [];
+    stepIndex = 0;
+    let parent = {}, rank = {};
+    nodes.forEach(node => { parent[node.id] = node.id; rank[node.id] = 0; });
+    stepKruskal(parent, rank);
 }
-function highlightEdges(mstEdges) {
-    const edgeElements = document.querySelectorAll('.edge');
-    mstEdges.forEach(({ u, v }) => {
-        edges.forEach((edge, index) => {
-            if ((edge.u === u && edge.v === v) || (edge.u === v && edge.v === u)) {
-                setTimeout(() => {
-                    edgeElements[index].classList.add('highlight');
-                }, 500 * index); 
-            }
-        });
-    });
+
+function stepKruskal(parent, rank) {
+    if (stepIndex >= edges.length) return;
+    let edge = edges[stepIndex];
+    let root1 = find(parent, edge.source);
+    let root2 = find(parent, edge.target);
+    if (root1 !== root2) {
+        mstEdges.push(edge);
+        union(parent, rank, root1, root2);
+        drawMST();
+    }
+    stepIndex++;
+    setTimeout(() => stepKruskal(parent, rank), 1000);
+}
+
+function drawMST() {
+    svg.selectAll(".mst").remove();
+    svg.selectAll(".mst")
+        .data(mstEdges)
+        .enter()
+        .append("line")
+        .attr("x1", d => nodes[d.source].x)
+        .attr("y1", d => nodes[d.source].y)
+        .attr("x2", d => nodes[d.target].x)
+        .attr("y2", d => nodes[d.target].y)
+        .attr("class", "mst");
 }
