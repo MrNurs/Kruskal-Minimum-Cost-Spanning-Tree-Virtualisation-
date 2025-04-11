@@ -1,39 +1,18 @@
-body {
-    text-align: center;
-    font-family: Arial, sans-serif;
-}
-.graph {
-    position: relative;
-    width: 500px;
-    height: 500px;
-    margin: auto;
-    border: 2px solid black;
-}
-.node {
-    position: absolute;
-    width: 30px;
-    height: 30px;
-    background-color: blue;
-    border-radius: 50%;
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-}
-.edge {
-    position: absolute;
-    background-color: black;
-    height: 2px;
-    transform-origin: left top;
-    transition: background-color 0.5s ease-in-out;
-}
-.highlight {
-    background-color: red !important;
-}
-button {
-    margin-top: 20px;
-    padding: 10px;
-    font-size: 16px;
-    cursor: pointer;
-}
+table {
+    border-collapse: collapse;
+    margin: 10px;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+  canvas {
+    border: 1px solid #aaa;
+  }
+  .controls {
+    margin: 10px 0;
+  }
+  input[type="number"] {
+    width: 50px;
+    margin-right: 10px;
+  }
