@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kruskal's Algorithm</title>
   <script src="script.js" defer></script>
-  <link src="style.css">
+  <link rel="stylesheet" href="style.css">
+  
 </head>
 <body>
   <h2>Kruskal's Algorithm (MST)</h2>
@@ -24,15 +25,22 @@
       <canvas id="graphCanvas" width="600" height="500"></canvas>
     </div>
     
-    <div>
-      <h3>Graph Edges</h3>
-      <table id="edgesTable"></table>
+    <div class="container">
+      <div class="item">
+        <h3>Graph Edges</h3>
+        <table id="edgesTable"></table>
+      </div>
       
-      <h3>Minimum Spanning Tree</h3>
-      <table id="mstTable"></table>
       
-      <h3>Disjoint Set Union Status</h3>
-      <table id="disjointSet"></table>
+      <div class="item">
+        <h3>Minimum Spanning Tree</h3>
+        <table id="mstTable"></table>
+      </div>
+      
+      <div class="item">
+        <h3>Disjoint Set Union Status</h3>
+        <table id="disjointSet"></table>
+      </div>
     </div>
   </div>
 

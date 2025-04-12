@@ -16,3 +16,8 @@ table {
     width: 50px;
     margin-right: 10px;
   }
+  .container{
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+  }
