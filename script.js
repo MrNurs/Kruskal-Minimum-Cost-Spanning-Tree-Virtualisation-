@@ -5,13 +5,25 @@ let parent = {};
 let rank = {};
 let stepTimeout;
 let currentStepEdges = [];
+let history = [];
+let currentStepIndex = -1;
+let isAutoPlaying = false
+// let stepCounter = 0
+// const countElement = document.getElementById('step');
+
 
 function generateGraph() {
+  
+  // stepCounter = -1;
+  // countElement.innerText = stepCounter;
   clearTimeout(stepTimeout);
+  isAutoPlaying = false;
   const vertexCount = parseInt(document.getElementById('vertexCount').value) || 6;
   vertices = [];
   edges = [];
   mstEdges = [];
+  history = [];
+  currentStepIndex = -1;
 
   const centerX = 300;
   const centerY = 250;
@@ -61,6 +73,25 @@ function generateGraph() {
   updateVisualization();
 }
 
+function saveStateToHistory() {
+  history = history.slice(0, currentStepIndex + 1);
+  history.push({
+    parent: {...parent},
+    rank: {...rank},
+    mstEdges: [...mstEdges],
+    currentStepEdges: [...currentStepEdges]
+  });
+  currentStepIndex = history.length - 1;
+}
+
+function restoreStateFromHistory() {
+  const state = history[currentStepIndex];
+  parent = {...state.parent};
+  rank = {...state.rank};
+  mstEdges = [...state.mstEdges];
+  currentStepEdges = [...state.currentStepEdges];
+}
+
 function find(node) {
   if (parent[node] !== node) {
     parent[node] = find(parent[node]);
@@ -86,23 +117,30 @@ function union(node1, node2) {
 
 function startKruskalStepByStep() {
   clearTimeout(stepTimeout);
+  isAutoPlaying = false;
   mstEdges = [];
   parent = {};
   rank = {};
-  
+  history = [];
+  currentStepIndex = -1;
+  stepCounter = -1;
+
   currentStepEdges = [...edges].sort((a, b) => a.weight - b.weight);
-  
+
   vertices.forEach(v => {
     parent[v.id] = v.id;
     rank[v.id] = 0;
   });
-  
+
+  saveStateToHistory();
   updateVisualization();
-  stepKruskal();
 }
 
 function stepKruskal() {
-  if (currentStepEdges.length === 0) return;
+  if (currentStepEdges.length === 0) {
+    isAutoPlaying = false;
+    return;
+  }
 
   const edge = currentStepEdges.shift();
   const root1 = find(edge.source);
@@ -113,14 +151,50 @@ function stepKruskal() {
     union(edge.source, edge.target);
   }
 
+  saveStateToHistory();
   updateVisualization();
 
-  if (currentStepEdges.length > 0) {
+  if (isAutoPlaying) {
     stepTimeout = setTimeout(stepKruskal, 1500);
   }
 }
 
+function stopStepByStep() {
+  clearTimeout(stepTimeout);
+  isAutoPlaying = false;
+}
+
+function continueStepByStep() {
+  if (currentStepEdges.length === 0) return;
+  isAutoPlaying = true;
+  stepKruskal();
+}
+
+function nextStep() { 
+  stopStepByStep();
+  if (currentStepEdges.length > 0) {
+    // stepCounter++;
+    // countElement.innerText = stepCounter;
+    stepKruskal();
+  }
+}
+
+function previousStep() {
+  stopStepByStep();
+  if (currentStepIndex > 0) {
+    currentStepIndex--;
+    restoreStateFromHistory();
+    // stepCounter = Math.max(0, stepCounter - 1);
+    // countElement.innerText = stepCounter;
+    updateVisualization();
+  }
+}
+
+
+
 function updateVisualization() {
+
+
   updateTable('edgesTable', edges);
   updateTable('mstTable', mstEdges);
   updateDSUTable();
@@ -128,6 +202,16 @@ function updateVisualization() {
   const canvas = document.getElementById('graphCanvas');
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if(mstEdges.length === vertices.length - 1) {
+    ctx.fillStyle = '#2ecc71';
+    ctx.font = '20px Arial';
+    ctx.fillText('MST Complete!', 20, 40);
+  }//else{
+  //   stepCounter++;
+  //   countElement.innerText = stepCounter;
+  // }
+
 
   edges.forEach(edge => {
     const v1 = vertices[edge.source];
