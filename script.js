@@ -216,7 +216,7 @@ function updateVisualization() {
   if (mstEdges.length === vertices.length - 1) {
     ctx.fillStyle = '#2ecc71';
     ctx.font = '20px Arial';
-    ctx.fillText('MST Complete!', 20, 40);
+    ctx.fillText('MST Complete!', 90, 40);
   } //else{
   //   stepCounter++;
   //   countElement.innerText = stepCounter;
