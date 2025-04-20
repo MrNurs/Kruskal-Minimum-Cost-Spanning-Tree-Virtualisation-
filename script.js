@@ -27,9 +27,12 @@ function generateGraph() {
 
   const centerX = 300;
   const centerY = 250;
-  const radius = Math.min(200, 400 / (vertexCount * 0.5));
+  radius = Math.min(200, 400 / (vertexCount * 0.5));
   const angleStep = (2 * Math.PI) / vertexCount;
 
+  if(vertexCount > 9){
+    radius += 100 
+  }
   for (let i = 0; i < vertexCount; i++) {
     const angle = (i * angleStep) - Math.PI / 2;
     vertices.push({
