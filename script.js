@@ -13,7 +13,7 @@ let isAutoPlaying = false
 
 
 function generateGraph() {
-  
+
   // stepCounter = -1;
   // countElement.innerText = stepCounter;
   clearTimeout(stepTimeout);
@@ -31,7 +31,7 @@ function generateGraph() {
   const angleStep = (2 * Math.PI) / vertexCount;
 
   for (let i = 0; i < vertexCount; i++) {
-    const angle = (i * angleStep) - Math.PI/2;
+    const angle = (i * angleStep) - Math.PI / 2;
     vertices.push({
       id: i,
       x: centerX + radius * Math.cos(angle),
@@ -40,13 +40,15 @@ function generateGraph() {
   }
 
   const connected = new Set([0]);
-  
+
   while (connected.size < vertexCount) {
     const from = [...connected][Math.floor(Math.random() * connected.size)];
-    const to = Array.from({length: vertexCount}, (_, i) => i)
-                  .find(i => !connected.has(i));
+    const to = Array.from({
+        length: vertexCount
+      }, (_, i) => i)
+      .find(i => !connected.has(i));
     if (to === undefined) break;
-    
+
     edges.push({
       source: from,
       target: to,
@@ -57,10 +59,10 @@ function generateGraph() {
 
   for (let i = 0; i < vertexCount; i++) {
     for (let j = i + 1; j < vertexCount; j++) {
-      if (Math.random() > 0.5 && !edges.some(e => 
-        (e.source === i && e.target === j) ||
-        (e.source === j && e.target === i)
-      )) {
+      if (Math.random() > 0.5 && !edges.some(e =>
+          (e.source === i && e.target === j) ||
+          (e.source === j && e.target === i)
+        )) {
         edges.push({
           source: i,
           target: j,
@@ -76,8 +78,12 @@ function generateGraph() {
 function saveStateToHistory() {
   history = history.slice(0, currentStepIndex + 1);
   history.push({
-    parent: {...parent},
-    rank: {...rank},
+    parent: {
+      ...parent
+    },
+    rank: {
+      ...rank
+    },
     mstEdges: [...mstEdges],
     currentStepEdges: [...currentStepEdges]
   });
@@ -86,8 +92,12 @@ function saveStateToHistory() {
 
 function restoreStateFromHistory() {
   const state = history[currentStepIndex];
-  parent = {...state.parent};
-  rank = {...state.rank};
+  parent = {
+    ...state.parent
+  };
+  rank = {
+    ...state.rank
+  };
   mstEdges = [...state.mstEdges];
   currentStepEdges = [...state.currentStepEdges];
 }
@@ -170,7 +180,7 @@ function continueStepByStep() {
   stepKruskal();
 }
 
-function nextStep() { 
+function nextStep() {
   stopStepByStep();
   if (currentStepEdges.length > 0) {
     // stepCounter++;
@@ -203,11 +213,11 @@ function updateVisualization() {
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if(mstEdges.length === vertices.length - 1) {
+  if (mstEdges.length === vertices.length - 1) {
     ctx.fillStyle = '#2ecc71';
     ctx.font = '20px Arial';
     ctx.fillText('MST Complete!', 20, 40);
-  }//else{
+  } //else{
   //   stepCounter++;
   //   countElement.innerText = stepCounter;
   // }
@@ -216,7 +226,7 @@ function updateVisualization() {
   edges.forEach(edge => {
     const v1 = vertices[edge.source];
     const v2 = vertices[edge.target];
-    const isMST = mstEdges.some(e => 
+    const isMST = mstEdges.some(e =>
       (e.source === edge.source && e.target === edge.target) ||
       (e.source === edge.target && e.target === edge.source)
     );
@@ -230,8 +240,8 @@ function updateVisualization() {
 
     ctx.fillStyle = '#2c3e50';
     ctx.font = '12px Arial';
-    const midX = (v1.x + v2.x)/2 + 5;
-    const midY = (v1.y + v2.y)/2 + 5;
+    const midX = (v1.x + v2.x) / 2 + 5;
+    const midY = (v1.y + v2.y) / 2 + 5;
     ctx.fillText(edge.weight, midX, midY);
   });
 
@@ -242,7 +252,7 @@ function updateVisualization() {
     ctx.fill();
     ctx.strokeStyle = '#2c3e50';
     ctx.stroke();
-    
+
     ctx.fillStyle = '#ecf0f1';
     ctx.font = '14px Arial';
     ctx.textAlign = 'center';
