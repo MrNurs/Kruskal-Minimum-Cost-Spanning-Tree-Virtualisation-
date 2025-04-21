@@ -210,9 +210,8 @@ function updateVisualization() {
 
   const canvas = document.getElementById('graphCanvas');
   const ctx = canvas.getContext('2d');
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = rect.height;
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetWidth * 5 / 6; 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (mstEdges.length === vertices.length - 1) {
