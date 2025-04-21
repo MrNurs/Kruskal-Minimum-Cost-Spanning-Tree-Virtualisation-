@@ -8,11 +8,13 @@ let currentStepEdges = [];
 let history = [];
 let currentStepIndex = -1;
 let isAutoPlaying = false
+let isAlgorithmInitialized = false;
 
-
-
+пе
 function generateGraph() {
   clearTimeout(stepTimeout);
+  
+  isAlgorithmInitialized = false;
   isAutoPlaying = false;
   const vertexCount = parseInt(document.getElementById('vertexCount').value) || 6;
   vertices = [];
@@ -140,14 +142,34 @@ function startKruskalStepByStep() {
     parent[v.id] = v.id;
     rank[v.id] = 0;
   });
+  if (!isAlgorithmInitialized) {
+    clearTimeout(stepTimeout);
+    isAutoPlaying = false;
+    mstEdges = [];
+    parent = {};
+    rank = {};
+    history = [];
+    currentStepIndex = -1;
 
-  saveStateToHistory();
+    currentStepEdges = [...edges].sort((a, b) => a.weight - b.weight);
+
+    vertices.forEach(v => {
+      parent[v.id] = v.id;
+      rank[v.id] = 0;
+    });
+
+    saveStateToHistory();
+    isAlgorithmInitialized = true;
+  }
   updateVisualization();
+
 }
+
 
 function stepKruskal() {
   if (currentStepEdges.length === 0) {
     isAutoPlaying = false;
+    isAlgorithmInitialized = false; 
     return;
   }
 
@@ -181,9 +203,12 @@ function continueStepByStep() {
 
 function nextStep() {
   stopStepByStep();
+
+  if (!isAlgorithmInitialized) {
+    startKruskalStepByStep();
+  }
+  
   if (currentStepEdges.length > 0) {
-    // stepCounter++;
-    // countElement.innerText = stepCounter;
     stepKruskal();
   }
 }
@@ -193,8 +218,6 @@ function previousStep() {
   if (currentStepIndex > 0) {
     currentStepIndex--;
     restoreStateFromHistory();
-    // stepCounter = Math.max(0, stepCounter - 1);
-    // countElement.innerText = stepCounter;
     updateVisualization();
   }
 }
@@ -218,11 +241,7 @@ function updateVisualization() {
     ctx.fillStyle = '#2ecc71';
     ctx.font = '20px Arial';
     ctx.fillText('MST Complete!', 90, 40);
-  } //else{
-  //   stepCounter++;
-  //   countElement.innerText = stepCounter;
-  // }
-
+  } 
 
   edges.forEach(edge => {
     const v1 = vertices[edge.source];
