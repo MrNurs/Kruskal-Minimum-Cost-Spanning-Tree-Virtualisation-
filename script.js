@@ -10,7 +10,6 @@ let currentStepIndex = -1;
 let isAutoPlaying = false
 let isAlgorithmInitialized = false;
 
-пе
 function generateGraph() {
   clearTimeout(stepTimeout);
   
@@ -162,7 +161,6 @@ function startKruskalStepByStep() {
     isAlgorithmInitialized = true;
   }
   updateVisualization();
-
 }
 
 
@@ -222,11 +220,11 @@ function previousStep() {
   }
 }
 
-
+function calculateMSTWeight() {
+  return mstEdges.reduce((sum, edge) => sum + edge.weight, 0);
+}
 
 function updateVisualization() {
-
-
   updateTable('edgesTable', edges);
   updateTable('mstTable', mstEdges);
   updateDSUTable();
@@ -236,6 +234,8 @@ function updateVisualization() {
   canvas.width = canvas.offsetWidth;
   canvas.height = canvas.offsetWidth * 5 / 6; 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  document.getElementById('mstTotalWeight').innerText = `Total Weight: ${calculateMSTWeight()}`;
 
   if (mstEdges.length === vertices.length - 1) {
     ctx.fillStyle = '#2ecc71';
