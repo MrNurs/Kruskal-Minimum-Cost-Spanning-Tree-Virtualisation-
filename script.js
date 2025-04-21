@@ -8,14 +8,10 @@ let currentStepEdges = [];
 let history = [];
 let currentStepIndex = -1;
 let isAutoPlaying = false
-// let stepCounter = 0
-// const countElement = document.getElementById('step');
+
 
 
 function generateGraph() {
-
-  // stepCounter = -1;
-  // countElement.innerText = stepCounter;
   clearTimeout(stepTimeout);
   isAutoPlaying = false;
   const vertexCount = parseInt(document.getElementById('vertexCount').value) || 6;
@@ -214,6 +210,9 @@ function updateVisualization() {
 
   const canvas = document.getElementById('graphCanvas');
   const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (mstEdges.length === vertices.length - 1) {

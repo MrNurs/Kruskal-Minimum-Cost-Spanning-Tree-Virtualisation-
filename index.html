@@ -11,7 +11,7 @@
 
 <body>
   <header>
-    <div class="controls">
+    <div class="controls container">
       <h2>Kruskal's Algorithm (MST)</h2>
       <label>
         Number of Vertices:
@@ -21,13 +21,12 @@
       <button onclick="startKruskalStepByStep();continueStepByStep()">Find MST Step-by-Step</button>
       <button onclick="stopStepByStep()">Stop</button>
       <button onclick="continueStepByStep()">Continue</button>
-      <button onclick="nextStep()">Next</button>
       <button onclick="previousStep()">Back</button>
+      <button onclick="nextStep()">Next</button>
     </div>
-  
   </header>
   <div class="visualDiv" style="display: flex; gap: 20px;">
-    <div>
+    <div class="canvas-wrapper">
       <h3>Graph Visualization <span id="step">0</span></h3>
       <canvas id="graphCanvas" width="600" height="500"></canvas>
     </div>
